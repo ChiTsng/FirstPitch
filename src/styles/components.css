@@ -1,0 +1,995 @@
+/* 各个交互组件的样式。球场 SVG 在 field.css。 */
+
+/* ── 记分板 CountBoard ────────────────────────── */
+
+/* 记分板是全站最有性格的地方，所以做到底：黑色外框、凹进去的灯窝、
+   灯是径向渐变（中心亮、边缘暗）而不是纯色圆、亮起时向外溢光、
+   顶部一道极细的高光暗示亚克力罩面。 */
+.scoreboard {
+  position: relative;
+  background: linear-gradient(to bottom, #0b0906, #050403);
+  border: 1px solid var(--instrument-line);
+  border-radius: 3px;
+  padding: var(--sp-4) var(--sp-5);
+  font-family: var(--font-dot);
+  color: var(--instrument-ink);
+  box-shadow:
+    inset 0 0 30px rgba(0, 0, 0, 0.9),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* 亚克力罩面：顶上一道极细的高光 */
+.scoreboard::before {
+  content: '';
+  position: absolute;
+  inset: 1px 1px auto;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.22) 22%,
+    rgba(255, 255, 255, 0.22) 78%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.scoreboard__rows {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.scoreboard__row {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.scoreboard__key {
+  font-size: 1.15rem;
+  letter-spacing: 0.2em;
+  color: var(--instrument-ink-muted);
+}
+
+.scoreboard__lamps {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* 灯窝：凹进面板里的一个小坑，里面是熄灭的灯泡 */
+.lamp {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%, #24211c, #0b0a08 72%);
+  box-shadow:
+    inset 0 1.5px 2px rgba(0, 0, 0, 0.95),
+    inset 0 -1px 1px rgba(255, 255, 255, 0.06),
+    0 0.5px 0 rgba(255, 255, 255, 0.07);
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+/* 亮起的一瞬间先过亮一下，像灯丝点着 */
+@keyframes lamp-strike {
+  0% {
+    filter: brightness(2.6);
+  }
+  100% {
+    filter: none;
+  }
+}
+
+/* 亮起：中心亮、边缘暗，并向外溢一圈光 */
+.lamp.is-on {
+  animation: lamp-strike 280ms var(--ease);
+  background: radial-gradient(
+    circle at 50% 36%,
+    #ffffff 4%,
+    var(--lamp-tint) 34%,
+    color-mix(in srgb, var(--lamp-tint) 62%, #000000) 100%
+  );
+  box-shadow:
+    inset 0 0 3px color-mix(in srgb, var(--lamp-tint) 60%, #ffffff),
+    0 0 7px var(--lamp-tint),
+    0 0 16px color-mix(in srgb, var(--lamp-tint) 55%, transparent);
+}
+
+.lamp--ball {
+  --lamp-tint: var(--lamp-ball);
+}
+
+.lamp--strike {
+  --lamp-tint: var(--lamp-strike);
+}
+
+.lamp--out {
+  --lamp-tint: var(--lamp-out);
+}
+
+.scoreboard__runs {
+  margin-top: var(--sp-4);
+  padding-top: var(--sp-3);
+  color: var(--instrument-ink-muted);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+}
+
+/* 一句话解释条 */
+.explain {
+  margin-top: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-raised);
+  border-left: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  font-size: 0.93rem;
+  line-height: 1.7;
+  color: var(--ink-muted);
+  min-height: 3.2rem;
+}
+
+.explain strong {
+  color: var(--ink);
+}
+
+/* ── 工具面板通用外框 ─────────────────────────── */
+
+/* 交互工具是**器械**，不是文字：更暗、内凹、顶上一道极细的高光暗示罩面，
+   和记分板一个家族。面板里面是一套独立的配色环境 ——
+   它是摆在黑暗里的一件东西，两套主题下长得一样。 */
+.panel {
+  /* 面板在两套主题下都是深色的，所以**语义色也要用夜场那一支**：
+     日场的照明金是为浅色底调暗过的（#85600f），压在这块皮革黑上
+     和键帽上的深色字只有 2.2:1，根本读不出来。 */
+  --highlight: var(--tower-gold);
+  --highlight-soft: rgba(233, 196, 106, 0.16);
+  --accent-text: #ee6274;
+  --lamp-ball: #4cd97b;
+  --lamp-strike: #ffc43d;
+  --lamp-out: #ff4a3d;
+  --lamp-ball-ink: #06331a;
+  --lamp-out-ink: #2b0400;
+
+  --ink: var(--instrument-ink);
+  --ink-muted: var(--instrument-ink-muted);
+  --ink-faint: var(--instrument-ink-faint);
+  --line: var(--instrument-line);
+  --line-strong: rgba(242, 243, 238, 0.34);
+  --hairline: rgba(242, 243, 238, 0.24);
+  --hairline-soft: rgba(242, 243, 238, 0.1);
+  --bg: var(--instrument);
+  --surface: var(--instrument-raised);
+  --bg-raised: var(--instrument-raised);
+
+  background: var(--instrument);
+  border: 1px solid var(--instrument-line);
+  border-radius: var(--radius);
+  padding: var(--sp-5);
+  margin: var(--sp-6) 0;
+  color: var(--instrument-ink);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+    inset 0 0 50px rgba(0, 0, 0, 0.45);
+}
+
+.panel__title {
+  font-family: var(--font-dot);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.3em;
+  line-height: 1;
+  color: var(--instrument-ink-muted);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--instrument-line);
+  margin-bottom: var(--sp-4);
+}
+
+.panel__hint {
+  font-size: var(--fs-small);
+  color: var(--instrument-ink-faint);
+  margin-bottom: var(--sp-4);
+  max-width: var(--measure);
+}
+
+.panel__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .panel__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.field-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  margin-top: var(--sp-3);
+}
+
+.field-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.field-legend i {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ── 测验 ─────────────────────────────────────── */
+
+/* 测验卡做成一张記録用紙：淡淡的方格、题号装在方框里、答案区像填写栏。
+   不是又一个圆角卡片。 */
+.quiz-card {
+  border: 1px solid var(--hairline);
+  border-radius: 2px;
+  padding: var(--sp-5);
+  margin-bottom: var(--sp-6);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(var(--hairline-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hairline-soft) 1px, transparent 1px);
+  background-size: 1.75rem 1.75rem;
+  background-position: -1px -1px;
+}
+
+.quiz-card__id {
+  display: inline-block;
+  font-family: var(--font-dot);
+  font-size: var(--fs-eyebrow);
+  color: var(--ink-muted);
+  letter-spacing: 0.24em;
+  line-height: 1;
+  padding: 0.42em 0.1em 0.42em 0.6em;
+  border: 1px solid var(--hairline);
+  background: var(--bg);
+}
+
+.quiz-card__q {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.08rem;
+  line-height: 1.65;
+  margin: var(--sp-2) 0 var(--sp-4);
+}
+
+.quiz-card__setup {
+  font-size: 0.86rem;
+  color: var(--ink-faint);
+  font-family: var(--font-dot);
+  letter-spacing: 0.06em;
+  margin: var(--sp-3) 0;
+}
+
+/* 选项是記録用紙上的填写行，不是四张卡片：
+   一条发丝线分隔，选项字母装在一个小方格里。 */
+.choices {
+  display: grid;
+  margin-bottom: var(--sp-4);
+}
+
+.choice {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--hairline-soft);
+  border-radius: 0;
+  color: inherit;
+  cursor: pointer;
+  line-height: 1.7;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.choice:hover:not(:disabled) {
+  border-bottom-color: var(--hairline);
+}
+
+.choice__mark {
+  flex: 0 0 1.6rem;
+  height: 1.6rem;
+  line-height: 1.55rem;
+  text-align: center;
+  font-family: var(--font-dot);
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+  border: 1px solid var(--hairline-soft);
+  transition: all var(--dur-fast) var(--ease);
+}
+
+.choice.is-correct {
+  border-bottom-color: var(--lamp-ball);
+}
+
+.choice.is-correct .choice__mark {
+  background: var(--lamp-ball);
+  border-color: var(--lamp-ball);
+  color: var(--lamp-ball-ink);
+}
+
+.choice.is-wrong {
+  border-bottom-color: var(--lamp-out);
+}
+
+.choice.is-wrong .choice__mark {
+  background: var(--lamp-out);
+  border-color: var(--lamp-out);
+  color: var(--lamp-out-ink);
+}
+
+.choice:disabled {
+  cursor: default;
+}
+
+/* 答案区像記録用紙上的填写栏：上面一条实线，底色压深一点 */
+.answer {
+  margin-top: var(--sp-5);
+  padding: var(--sp-4) var(--sp-4) var(--sp-4) 0;
+  border-top: 1px solid var(--hairline);
+  background: none;
+}
+
+.answer h4 {
+  margin-bottom: var(--sp-2);
+}
+
+.answer > :last-child {
+  margin-bottom: 0;
+}
+
+.quiz-progress {
+  font-family: var(--font-dot);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  letter-spacing: 0.1em;
+}
+
+/* 提要：把一整节收敛成一句话。左边一条石灰发丝线，不是金色 —— 它不发光。 */
+.pull {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-claim);
+  line-height: 1.6;
+  margin: var(--sp-6) 0;
+  padding-left: var(--sp-5);
+  border-left: 1px solid var(--hairline);
+  max-width: 40rem;
+}
+
+/* ── 术语表 ───────────────────────────────────── */
+
+.glossary-search {
+  width: 100%;
+  max-width: 26rem;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink);
+  font: inherit;
+}
+
+.glossary-search::placeholder {
+  color: var(--ink-faint);
+}
+
+.term-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--sp-4);
+  font-size: 0.94rem;
+}
+
+.term-table th,
+.term-table td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.term-table th {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.term-table td:nth-child(2) {
+  font-family: var(--font-jp-body);
+}
+
+.term-table td:nth-child(3) {
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+.term-table tbody tr:hover {
+  background: var(--highlight-soft);
+}
+
+.pitfall {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: var(--sp-4) var(--sp-5);
+  margin: var(--sp-4) 0;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.pitfall h3 {
+  color: var(--accent-text);
+  margin-bottom: var(--sp-3);
+}
+
+.pitfall ul {
+  margin-bottom: 0;
+}
+
+/* 正文里的术语：悬停看日英 */
+.term {
+  border-bottom: 1px dotted var(--ink-faint);
+  cursor: help;
+  position: relative;
+}
+
+.term:hover,
+.term:focus-visible {
+  border-bottom-color: var(--highlight);
+  color: var(--highlight);
+}
+
+.term__pop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 0.4rem);
+  transform: translateX(-50%);
+  z-index: 30;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  white-space: nowrap;
+  color: var(--ink);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.term__pop b {
+  font-family: var(--font-jp-body);
+  font-weight: 500;
+  display: block;
+}
+
+.term__pop i {
+  color: var(--ink-faint);
+  display: block;
+}
+
+/* ── 时间条 RaceTimeline ──────────────────────── */
+
+.race {
+  display: grid;
+  gap: var(--sp-4);
+  margin: var(--sp-5) 0;
+}
+
+.race__row {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr) 3.6rem;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 0.9rem;
+}
+
+.race__label {
+  color: var(--ink-muted);
+  text-align: right;
+}
+
+/* 计时条是一段嵌在面板里的刻度带，不是一根圆头的进度条：
+   内凹的槽、每 0.5 秒一道刻度、条段是实心的色块压在上面。 */
+.race__track {
+  position: relative;
+  height: 1.6rem;
+  background: var(--key-well);
+  border: 1px solid var(--key-edge);
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px var(--key-drop);
+}
+
+/* 刻度压在条段之上，所以读得出每一段跨了几格 */
+.race__track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0 calc(var(--tick, 10%) - 1px),
+    rgba(255, 255, 255, 0.18) calc(var(--tick, 10%) - 1px) var(--tick, 10%)
+  );
+}
+
+.race__seg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-dot);
+  font-size: 0.72rem;
+  color: var(--night-blue);
+  transition: left var(--dur) var(--ease), width var(--dur) var(--ease);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.race__seg--defense {
+  background: var(--lamp-strike);
+}
+
+.race__seg--defense-2 {
+  background: color-mix(in srgb, var(--lamp-strike) 62%, var(--bg-sunken));
+  color: var(--ink);
+}
+
+.race__seg--runner {
+  background: var(--lamp-ball);
+}
+
+.race__total {
+  font-family: var(--font-dot);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+  color: var(--highlight);
+  text-align: right;
+}
+
+.race__verdict {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  border-left: 1px solid var(--hairline);
+}
+
+/* ── 原理推导图 ───────────────────────────────── */
+
+.map {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+@media (max-width: 820px) {
+  .map {
+    grid-template-columns: 1fr;
+  }
+}
+
+.map__col h3 {
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  font-family: var(--font-body);
+  font-weight: 500;
+  margin-bottom: var(--sp-3);
+}
+
+/* 保留列表感，但用发丝线分隔代替一堆独立卡片。
+   高亮时**整行泛光**，不是换一个底色 —— 金色表示光，那就让它发光。 */
+.map__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) 0;
+  margin: 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--hairline-soft);
+  border-radius: 0;
+  cursor: pointer;
+  line-height: 1.6;
+  color: inherit;
+  transition:
+    color var(--dur-fast) var(--ease),
+    opacity var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+
+.map__item:hover {
+  border-bottom-color: var(--hairline);
+}
+
+.map__item.is-dim {
+  opacity: 0.3;
+}
+
+.map__item.is-lit {
+  color: var(--highlight);
+  border-bottom-color: var(--highlight);
+}
+
+.map__item.is-lit > strong {
+  text-shadow: 0 0 20px color-mix(in srgb, var(--highlight) 55%, transparent);
+}
+
+.map__item.is-source {
+  color: var(--accent-text);
+  border-bottom-color: var(--accent);
+}
+
+.map__item.is-source > strong {
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* 只作用于条目标题那个 strong。正文里 **粗体** 生成的 strong 在 <small> 里，
+   要是也 display:block，句子会在粗体处硬生生断行。 */
+.map__item > strong {
+  display: block;
+  font-family: var(--font-display);
+  margin-bottom: var(--sp-1);
+}
+
+.map__item small {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+}
+
+/* ── sticky 球场的取景框 ─────────────────────── */
+
+/* 它是取景器，不是又一张圆角卡片 */
+.viewfinder {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--hairline-soft);
+}
+
+.viewfinder .field {
+  border: none;
+  border-radius: 0;
+  display: block;
+}
+
+/* 四角的定位角标。用一个元素画四个角：两层 conic/linear 太绕，
+   直接用四个渐变背景定位在四角。 */
+.viewfinder__corners {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  --c: var(--hairline);
+  --len: 14px;
+  background:
+    linear-gradient(var(--c), var(--c)) 0 0 / 1px var(--len) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 0 / var(--len) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / 1px var(--len) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 0 / var(--len) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / 1px var(--len) no-repeat,
+    linear-gradient(var(--c), var(--c)) 0 100% / var(--len) 1px no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / 1px var(--len) no-repeat,
+    linear-gradient(var(--c), var(--c)) 100% 100% / var(--len) 1px no-repeat;
+}
+
+.viewfinder__caption {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-top: 1px solid var(--hairline-soft);
+  font-size: 0.82rem;
+  color: var(--ink-faint);
+}
+
+.viewfinder__no {
+  font-family: var(--font-dot);
+  letter-spacing: 0.24em;
+  color: var(--highlight);
+}
+
+/* ── 表格（人员、时间等页面） ─────────────────── */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--sp-4) 0;
+  font-size: 0.94rem;
+}
+
+.data-table caption {
+  text-align: left;
+  color: var(--ink-faint);
+  font-size: 0.86rem;
+  padding-bottom: var(--sp-2);
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.data-table thead th {
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border-bottom-color: var(--line-strong);
+}
+
+.data-table td:first-child {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin: var(--sp-4) 0;
+}
+
+/* ── 两难演示 DilemmaPlayer ───────────────────── */
+
+.dilemma {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5);
+}
+
+@media (max-width: 820px) {
+  .dilemma {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dilemma__side {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  background: var(--surface);
+}
+
+.dilemma__side h4 {
+  margin-bottom: var(--sp-3);
+}
+
+.dilemma__steps {
+  list-style: none;
+  padding: 0;
+  margin: var(--sp-3) 0 0;
+  counter-reset: step;
+}
+
+.dilemma__steps li {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: var(--sp-3);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  opacity: 0.35;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.dilemma__steps li.is-shown {
+  opacity: 1;
+}
+
+.dilemma__steps li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0.15em;
+  width: 1.4rem;
+  height: 1.4rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  font-family: var(--font-dot);
+  font-size: 0.75rem;
+}
+
+.dilemma__steps li.is-shown::before {
+  background: var(--highlight);
+  border-color: var(--highlight);
+  color: var(--night-blue);
+}
+
+.verdict {
+  margin-top: var(--sp-5);
+  padding: var(--sp-4) var(--sp-5);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.verdict > :last-child {
+  margin-bottom: 0;
+}
+
+/* ── 情境模拟器时间线 ─────────────────────────── */
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: var(--sp-4) 0 0;
+  border-left: 1px solid var(--line-strong);
+}
+
+.timeline li {
+  position: relative;
+  padding: 0 0 var(--sp-4) var(--sp-5);
+  font-size: 0.93rem;
+  line-height: 1.75;
+}
+
+.timeline li::before {
+  content: '';
+  position: absolute;
+  left: -0.32rem;
+  top: 0.62em;
+  width: 0.62rem;
+  height: 0.62rem;
+  border-radius: 50%;
+  background: var(--highlight);
+}
+
+.timeline li.is-decision::before {
+  background: var(--accent);
+}
+
+.timeline__tag {
+  display: inline-block;
+  font-family: var(--font-dot);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  padding: 0 0.45em;
+  border-radius: 2px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  margin-right: 0.5em;
+  vertical-align: 0.1em;
+}
+
+/* ── 卡片列表（故事页等） ─────────────────────── */
+
+.story {
+  border-top: 1px solid var(--hairline-soft);
+  padding: var(--sp-8) 0;
+  max-width: 44rem;
+}
+
+.story:first-of-type {
+  border-top: none;
+  padding-top: var(--sp-5);
+}
+
+.story h3 {
+  font-size: var(--fs-h3);
+  margin-bottom: var(--sp-4);
+}
+
+/* 日期是仪器读数，不是光 —— 所以点阵字 + 弱色，不是照明金 */
+.story__meta {
+  font-family: var(--font-dot);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.3em;
+  line-height: 1;
+  color: var(--ink-faint);
+  margin-bottom: var(--sp-3);
+}
+
+/* 首字下沉只给「故事」页（用的是 <article>），
+   「常见战术」用的是 <div> 且顺序是标题在前，落到它身上会砸在小标题上。 */
+article.story--drop > h3 + p::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 3.1em;
+  line-height: 0.84;
+  margin: 0.06em 0.1em 0 0;
+  color: var(--ink);
+}
+
+/* ── 章节末尾的小测验 ─────────────────────────── */
+
+.layer-quiz {
+  margin-top: var(--sp-7);
+  padding-top: var(--sp-5);
+  border-top: 1px dashed var(--line-strong);
+}
+
+.layer-quiz__head {
+  font-family: var(--font-dot);
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  color: var(--highlight);
+  margin-bottom: var(--sp-4);
+}
+
+.next-layer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: all var(--dur) var(--ease);
+}
+
+.next-layer.is-unlocked {
+  border-color: var(--highlight);
+  color: var(--night-blue);
+  background: var(--highlight);
+  font-weight: 700;
+  box-shadow: var(--glow);
+}
+
+:root[data-theme='day'] .next-layer.is-unlocked {
+  color: #fff;
+}
+
+/* ── 目录 ─────────────────────────────────────── */
+
+.toc {
+  list-style: none;
+  padding: 0;
+  margin: var(--sp-5) 0;
+  display: grid;
+  gap: var(--sp-2);
+  max-width: var(--measure);
+}
+
+.toc a {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: var(--ink-muted);
+}
+
+.toc a:hover {
+  background: var(--highlight-soft);
+  color: var(--ink);
+}
+
+.toc b {
+  font-family: var(--font-dot);
+  color: var(--highlight);
+  flex: 0 0 3.4rem;
+}

@@ -1,0 +1,295 @@
+/*
+ * 控件层：按键、下拉、滑轨、开关。
+ *
+ * 单独成一个文件，因为这一层有自己的一套物理：
+ * **按键是凸的，凹槽是凹的。** 按键上沿一道高光、下沿一道暗边，按下去真的陷进去；
+ * 下拉框、滑轨、复选框反过来，是嵌在面板里的凹槽，内壁有阴影。
+ *
+ * 原生控件一律 appearance: none 重画 —— 一个浏览器默认样式的 <select>
+ * 摆在皮革黑的器械面板上，底下的材质全白做了。
+ * 但元素本身保留（不换成 div），键盘、读屏和表单语义一分不丢。
+ */
+
+/* ── 按键 ─────────────────────────────────────── */
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-4) 0;
+}
+
+.btn {
+  position: relative;
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--key-edge);
+  border-radius: 3px;
+  background: linear-gradient(to bottom, var(--key-top), var(--key-bottom));
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow:
+    inset 0 1px 0 var(--key-gloss),
+    0 1px 0 var(--key-drop);
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+
+.btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--highlight) 55%, var(--key-edge));
+}
+
+/* 按下去要真的陷进去：位移一像素，高光和暗边对调 */
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+  background: linear-gradient(to bottom, var(--key-bottom), var(--key-top));
+  box-shadow: inset 0 2px 4px var(--key-drop);
+}
+
+/* 选中 = 这个键**亮着**，不是换了个底色。和记分板的灯是同一种语言。 */
+.btn[aria-pressed='true'],
+.btn.is-active {
+  color: var(--key-lit-ink);
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--highlight) 72%, transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--highlight) 82%, #ffffff),
+    color-mix(in srgb, var(--highlight) 86%, #000000)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 0 12px color-mix(in srgb, var(--highlight) 42%, transparent);
+}
+
+.btn--accent {
+  color: var(--accent-ink);
+  font-weight: 700;
+  border-color: color-mix(in srgb, var(--accent) 70%, #000000);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 84%, #ffffff),
+    color-mix(in srgb, var(--accent) 92%, #000000)
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 0 12px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.btn--ghost {
+  background: none;
+  box-shadow: none;
+  border-color: var(--hairline);
+  color: var(--ink-muted);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.btn--sm {
+  padding: var(--sp-1) var(--sp-3);
+  font-size: 0.83rem;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── 凹槽：下拉框 ─────────────────────────────── */
+
+/* 展开后的那张 <option> 列表由操作系统画，改不了；能改的部分全改了。 */
+.select {
+  appearance: none;
+  padding: var(--sp-1) 1.9em var(--sp-1) var(--sp-3);
+  font-family: var(--font-dot);
+  font-size: 0.86rem;
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+  color: var(--ink);
+  border: 1px solid var(--key-edge);
+  border-radius: 3px;
+  cursor: pointer;
+  background-color: var(--key-well);
+  /* 两个三角拼出一个朝下的角标 */
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-size: 5px 5px;
+  background-position:
+    right 1em center,
+    right 0.65em center;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 2px 4px var(--key-drop);
+}
+
+/* 面板里一排控件前面的那个标题：仪器的刻印，不是正文 */
+.panel-row__label {
+  align-self: center;
+  min-width: 4.4rem;
+  font-family: var(--font-dot);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.24em;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
+/* 凹槽和它的标题 */
+.control-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+}
+
+/* ── 凹槽：滑轨 ───────────────────────────────── */
+
+/*
+ * 已经走过的那一段用照明金填满，剩下的是空槽，槽上还有一排刻度。
+ * --fill 由组件按当前值算好传进来 —— CSS 读不到 input 的 value。
+ */
+.slider {
+  appearance: none;
+  width: 100%;
+  height: 1.5rem;
+  background: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 7px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+        to right,
+        var(--highlight) 0 var(--fill, 0%),
+        transparent var(--fill, 0%) 100%
+      )
+      no-repeat,
+    repeating-linear-gradient(
+        to right,
+        transparent 0 calc(10% - 1px),
+        var(--hairline-soft) calc(10% - 1px) 10%
+      )
+      no-repeat,
+    var(--key-well);
+  box-shadow: inset 0 1px 3px var(--key-drop);
+}
+
+/* 滚花的金属旋钮 */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-top: calc((7px - 1.05rem) / 2);
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  background:
+    repeating-linear-gradient(to right, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px),
+    linear-gradient(to bottom, #f7f1dd, #b6aa89);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+.slider::-moz-range-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--key-well);
+  box-shadow: inset 0 1px 3px var(--key-drop);
+}
+
+.slider::-moz-range-progress {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--highlight);
+}
+
+.slider::-moz-range-thumb {
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  background: linear-gradient(to bottom, #f7f1dd, #b6aa89);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+.slider-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) minmax(0, 2fr) 3.8rem;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  font-size: 0.88rem;
+}
+
+.slider-row output {
+  font-family: var(--font-dot);
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+  text-align: right;
+  color: var(--highlight);
+}
+
+/* ── 凹槽：复选框 ─────────────────────────────── */
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.switch input[type='checkbox'] {
+  appearance: none;
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  border: 1px solid var(--key-edge);
+  border-radius: 2px;
+  background: var(--key-well);
+  box-shadow: inset 0 1px 3px var(--key-drop);
+  display: grid;
+  place-content: center;
+  cursor: pointer;
+}
+
+.switch input[type='checkbox']::before {
+  content: '';
+  width: 0.56rem;
+  height: 0.3rem;
+  border-left: 2px solid var(--highlight);
+  border-bottom: 2px solid var(--highlight);
+  transform: rotate(-45deg) translate(1px, -2px);
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.switch input[type='checkbox']:checked::before {
+  opacity: 1;
+}
+
+/* ── 器械面板里的控件 ─────────────────────────── */
+
+/* 面板是摆在黑暗里的一件东西，它上面的键就该是同一种材料 */
+.panel {
+  --key-top: #2e2619;
+  --key-bottom: #1e1810;
+  --key-edge: rgba(242, 243, 238, 0.22);
+  --key-gloss: rgba(255, 255, 255, 0.09);
+  --key-drop: rgba(0, 0, 0, 0.8);
+  --key-well: #0e0b07;
+}

@@ -1,0 +1,223 @@
+/* 基础排版与全局元素。组件样式在 components.css，版式在 layout.css。 */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* 章节锚点跳转时不要被顶部导航压住 */
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* 底色放在 html 上，body 留给三层空气（见下） */
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  line-height: 1.9;
+  /* 规则参数（27.43 m、4 坏球）在正文里要对得齐 */
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+/* ── 页面的空气 ─────────────────────────────────
+ *
+ * 三层，都是 position: fixed，所以不随一万多像素的页面一起拉伸：
+ *   1. 垂直渐变 —— 顶部更深（夜空），底部透出一点暖色（场地溢出的光）
+ *   2. 四周暗角
+ *   3. 噪点
+ *
+ * 噪点用内联 SVG 的 feTurbulence 当 background-image，约 200 字节，不用额外请求。
+ * 一整块平涂的十六进制色拉满一屏，正是「像示意图」的元凶，这一层单独就能改掉很多。
+ */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+body::before {
+  background:
+    radial-gradient(130% 60% at 50% 104%, var(--air-spill), transparent 60%),
+    radial-gradient(100% 78% at 50% 46%, transparent 36%, var(--air-edge)),
+    linear-gradient(to bottom, var(--air-top), transparent 42%);
+}
+
+body::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: var(--air-noise);
+  mix-blend-mode: overlay;
+}
+
+/* 内容压在空气之上 */
+.app {
+  position: relative;
+  z-index: 1;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* 显示级：字越大，字距要收、行距要紧，否则大标题会散架 */
+h1 {
+  font-size: var(--fs-display);
+  line-height: 1.15;
+  letter-spacing: -0.012em;
+}
+
+h2 {
+  font-size: var(--fs-h2);
+  line-height: 1.22;
+  letter-spacing: -0.006em;
+}
+
+h3 {
+  font-size: var(--fs-h3);
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+h4 {
+  font-size: 1.02rem;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+/* 眉标：全站最小的字，点阵体、大字距、照明金 ——
+   和显示级标题之间那 6 倍的落差就是这个站的识别度。 */
+.eyebrow {
+  display: block;
+  font-family: var(--font-dot);
+  font-size: var(--fs-eyebrow);
+  letter-spacing: 0.3em;
+  line-height: 1;
+  color: var(--highlight);
+  text-transform: uppercase;
+}
+
+p {
+  margin: 0 0 var(--sp-4);
+  max-width: var(--measure);
+}
+
+ul,
+ol {
+  max-width: var(--measure);
+  padding-left: 1.3em;
+  margin: 0 0 var(--sp-4);
+}
+
+li {
+  margin-bottom: var(--sp-2);
+}
+
+strong {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+a {
+  color: var(--highlight);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--ink);
+}
+
+code,
+kbd {
+  font-family: var(--font-dot);
+  font-size: 0.95em;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* 键盘焦点必须看得见 —— 用照明金的描边，任何主题下都够亮 */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+:where(button, a, [role='button'], summary):focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 跳到主内容，给键盘和读屏用户 */
+.skip-link {
+  position: absolute;
+  left: var(--sp-4);
+  top: -4rem;
+  z-index: 100;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--highlight);
+  color: var(--night-blue);
+  font-weight: 700;
+  border-radius: var(--radius);
+  transition: top var(--dur-fast) var(--ease);
+}
+
+.skip-link:focus {
+  top: var(--sp-4);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 尊重 prefers-reduced-motion：关掉动画，只保留状态切换 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection {
+  background: var(--highlight);
+  color: var(--night-blue);
+}

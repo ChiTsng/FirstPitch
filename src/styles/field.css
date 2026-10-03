@@ -1,0 +1,646 @@
+/*
+ * 球场 SVG 的样式。
+ *
+ * 三种材质撑起全部视觉语言：
+ *   光    照明塔的光池、辉光、全场暗角
+ *   土    内野的颗粒、投手丘的受光
+ *   石灰  界线的粉尘与毛边
+ *
+ * 混合模式是这一整套的关键：光池必须用 screen（光是相加的），
+ * 暗角必须用 multiply。用错了永远是一片发浑的褐色 —— 上一版就是这么糊的。
+ */
+
+.field {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 62vh;
+  border-radius: var(--radius-lg);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  /* 混合模式只在球场内部生效，别渗到页面上 */
+  isolation: isolate;
+  /* 背景按取景向外放了一圈，用来盖住 letterbox 的边条；这里裁掉多出来的部分 */
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035), 0 18px 46px rgba(0, 0, 0, 0.18);
+}
+
+.field--celebrate .tower__lamp {
+  animation: field-flash var(--dur-slow) var(--ease);
+}
+
+.field__score-light { opacity: 0; pointer-events: none; mix-blend-mode: screen; }
+.field--celebrate .field__score-light { animation: score-bloom 850ms var(--ease); }
+@keyframes score-bloom {
+  0%, 100% { opacity: 0; }
+  24% { opacity: 1; }
+}
+
+@keyframes field-flash {
+  0% {
+    fill-opacity: 0.9;
+  }
+  35% {
+    fill-opacity: 0.35;
+  }
+  100% {
+    fill-opacity: 1;
+  }
+}
+
+/* ── 每一层的「点亮」 ─────────────────────────── */
+
+.field__grass,
+.field__floor-g,
+.field__fence,
+.field__dirt,
+.field__foul,
+.field__lane,
+.field__diamond,
+.field__mound,
+.field__base,
+.field__fielders,
+.field__towers,
+.field__zone,
+.field__home,
+.field__battery {
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease);
+  pointer-events: none;
+}
+
+.field__grass.is-on,
+.field__floor-g.is-on,
+.field__fence.is-on,
+.field__dirt.is-on,
+.field__foul.is-on,
+.field__lane.is-on,
+.field__diamond.is-on,
+.field__mound.is-on,
+.field__base.is-on,
+.field__towers.is-on,
+.field__zone.is-on,
+.field__home.is-on,
+.field__battery.is-on {
+  opacity: 1;
+}
+
+.field__fielders.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── 入场：每种材质按自己的方式出现 ────────────
+ *
+ * 这一节是「设计」和「加动画」的分界：不是所有东西一起淡入，
+ * 而是草坪从本垒长出来、石灰线被画出来、垒包弹出来、照明塔一座一座亮起来。
+ * prefers-reduced-motion 由 base.css 统一关掉。
+ */
+
+/* 草坪：从本垒长出去。裁切路径是界内区域且不跟着缩放，
+   所以缩小的扇形正好落在界线里面，看起来就是草皮铺开。 */
+.field__grass {
+  transform-box: fill-box;
+  /* fairTerritoryPath 的包围盒里，本垒正好在底边中点 */
+  transform-origin: 50% 100%;
+  transform: scale(0.84);
+  transition:
+    opacity var(--dur-slow) var(--ease),
+    transform 760ms var(--ease);
+}
+
+.field__grass.is-on {
+  transform: none;
+}
+
+/* 石灰线：画出来。pathLength=1 见 FieldCanvas 的 Chalk。 */
+.chalk.is-drawn {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 700ms var(--ease);
+}
+
+.field__foul.is-on .chalk.is-drawn {
+  stroke-dashoffset: 0;
+}
+
+/* 垒包：弹出来，带一点回弹 */
+.field__base path {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transform: scale(0.3);
+  transition: transform 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.field__base.is-on path {
+  transform: none;
+}
+
+/* 照明塔：每座间隔 80ms 依次点亮。四座一起亮就只是「开灯」，
+   依次亮才是球场入夜。 */
+.tower {
+  opacity: 0;
+  transition: opacity 420ms var(--ease);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+
+.field__towers.is-on .tower {
+  opacity: 1;
+}
+
+/* ── 土与草 ───────────────────────────────────── */
+
+/* 割草条纹：同一个绿的明度差，不是两个色相。
+   真实的条纹差别来自草的倒伏方向，对比度本来就很低。 */
+/* 明暗交替：只画亮带的话草皮会多出一层额外的亮度，读成光而不是纹理。
+   对比度要压得很低 —— 真实的条纹差别只是草的倒伏方向，不是两种绿。 */
+.field__mown path {
+  fill: #ffffff;
+  fill-opacity: 0.045;
+}
+
+.field__mown path:nth-child(even) {
+  fill: #000000;
+  fill-opacity: 0.03;
+}
+
+.field__floor {
+  fill: var(--field-floor);
+}
+
+/* 颗粒。overlay 让噪点按底色的明暗自己调节强弱，比直接叠白灰自然。 */
+.field__grain {
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+.field__grain--ground {
+  opacity: 0.16;
+}
+
+.field__grain--turf {
+  opacity: 0.26;
+}
+
+.field__grain--soil {
+  opacity: 0.34;
+}
+
+.field__fence path {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.field__warning-track { stroke: var(--field-track); stroke-width: 5.2; }
+.field__wall-shadow { stroke: #020e12; stroke-width: 2.6; stroke-opacity: 0.5; }
+.field__wall { stroke: var(--field-wall); stroke-width: 1.65; }
+.field__wall-rim { stroke: #b5d1c2; stroke-width: 0.16; stroke-opacity: 0.42; }
+
+.field__mound ellipse {
+  fill: var(--field-dirt-lit);
+}
+
+.field__rubber {
+  fill: var(--chalk);
+  fill-opacity: 0.9;
+}
+
+/* ── 光 ───────────────────────────────────────── */
+
+.field__pools {
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* 日场没有照明塔：四个光池全部关掉，换成一片方向明确的日照。
+   反过来，夜场不需要日照层。 */
+:root[data-theme='day'] .field__pools {
+  display: none;
+}
+
+.field__sun {
+  display: none;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+:root[data-theme='day'] .field__sun {
+  display: block;
+}
+
+/* 白天不打塔灯 */
+:root[data-theme='day'] .field__towers {
+  display: none;
+}
+
+.field__vignette {
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* 塔的辉光也是光，同样相加 */
+.field__towers {
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* 白天没有孤岛般的一片光，暗角只剩一点点镜头的味道 */
+:root[data-theme='day'] .field__vignette {
+  opacity: 0.16;
+}
+
+/* 灯盘本身是亮的。上一版画成了深色方块加一圈金描边，
+   结果四座塔读起来像四把黑锤子。 */
+.tower__bank {
+  fill: #12100a;
+  stroke: rgba(255, 238, 186, 0.45);
+  stroke-width: 0.25;
+}
+
+.tower__lamp {
+  fill: #fff6d8;
+  fill-opacity: 0.92;
+}
+
+.tower__mast {
+  fill: #0a1118;
+  fill-opacity: 0.7;
+}
+
+/* ── 石灰 ─────────────────────────────────────── */
+
+.chalk {
+  fill: none;
+  stroke: var(--chalk);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 粉尘的光晕用两道加宽的低透明度描边叠出来。
+   比 feGaussianBlur 便宜得多，滚动时不会重栅格化。 */
+.chalk--bloom {
+  stroke-opacity: 0.05;
+}
+
+.chalk--haze {
+  stroke-opacity: 0.12;
+}
+
+.chalk--core {
+  stroke-opacity: 0.94;
+}
+
+/* 被太阳漂白的石灰线：白天的线更白、更实，粉尘也更亮 */
+:root[data-theme='day'] .chalk--core {
+  stroke-opacity: 1;
+}
+
+:root[data-theme='day'] .chalk--bloom {
+  stroke-opacity: 0.12;
+}
+
+:root[data-theme='day'] .chalk--haze {
+  stroke-opacity: 0.24;
+}
+
+.field__lane-fill {
+  fill: var(--chalk);
+  fill-opacity: 0.08;
+  stroke: none;
+}
+
+.field__plate {
+  fill: var(--chalk);
+  stroke: rgba(0, 0, 0, 0.35);
+  stroke-width: 0.03;
+}
+
+.field__base path {
+  fill: var(--chalk);
+  stroke: rgba(0, 0, 0, 0.3);
+  stroke-width: 0.12;
+}
+
+.field__base path.is-lit,
+path.is-lit {
+  stroke: var(--highlight);
+  stroke-width: 0.7;
+  filter: drop-shadow(0 0 2.5px var(--tower-gold));
+}
+
+/* ── 好球带柱体 ───────────────────────────────── */
+
+.zone__face {
+  stroke: var(--tower-gold);
+  stroke-width: 0.035;
+}
+
+.zone__face--front {
+  fill: rgba(233, 196, 106, 0.16);
+}
+
+.zone__face--back {
+  fill: rgba(233, 196, 106, 0.07);
+}
+
+.zone__edge {
+  stroke: var(--tower-gold);
+  stroke-width: 0.028;
+  stroke-opacity: 0.6;
+}
+
+/* ── 野手编号盘 ───────────────────────────────── */
+
+.fielder {
+  cursor: help;
+}
+
+/* 编号盘是一块搪瓷片，摆在草皮上：上亮下暗、一圈暗边、脚下一点投影。
+   平涂的圆片贴在打了光的场地上就像一张贴纸。 */
+.fielder__disc {
+  stroke: rgba(0, 0, 0, 0.55);
+  stroke-width: 0.16;
+  filter: drop-shadow(0 0.28px 0.36px rgba(0, 0, 0, 0.6));
+  transition: fill var(--dur-fast) var(--ease);
+}
+
+.fielder:hover .fielder__disc,
+.fielder:focus-visible .fielder__disc {
+  fill: var(--highlight);
+}
+
+.fielder__no {
+  font-family: var(--font-dot);
+  font-size: 2.4px;
+  fill: var(--ink);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.fielder:hover .fielder__no,
+.fielder:focus-visible .fielder__no {
+  fill: var(--night-blue);
+}
+
+.fielder__tip rect {
+  fill: var(--bg-raised);
+  stroke: var(--line-strong);
+  stroke-width: 0.12;
+}
+
+.fielder__tip-zh {
+  font-size: 2.2px;
+  fill: var(--ink);
+  text-anchor: middle;
+}
+
+.fielder__tip-en {
+  font-size: 1.6px;
+  fill: var(--ink-faint);
+  text-anchor: middle;
+}
+
+/* ── 姿态剪影 ─────────────────────────────────── */
+
+.person__shade ellipse {
+  fill: #000000;
+  fill-opacity: 0.13;
+}
+
+/* 白天是硬光，投影有明确的方向（太阳在左上，影子落向右下），
+   而且比夜场的漫射阴影更实、更短。 */
+:root[data-theme='day'] .person__shade {
+  transform: translate(0.34px, 0.12px);
+}
+
+:root[data-theme='day'] .person__shade ellipse {
+  fill: #2a2418;
+  fill-opacity: 0.3;
+}
+
+.person > ellipse,
+.person > circle,
+.person > path {
+  fill: var(--figure);
+  fill-opacity: 1;
+  stroke: var(--figure);
+  /* 关节处用同色描边把相邻两段接圆，省掉逐段算圆角 */
+  stroke-width: 0.022;
+  stroke-linejoin: round;
+  stroke-opacity: 1;
+}
+
+.person--catcher,
+.person--pitcher {
+  opacity: 0.8;
+}
+
+.person__gear {
+  fill: none;
+  stroke: var(--field-sky-deep);
+  stroke-width: 0.025;
+  stroke-linecap: round;
+  opacity: 0.58;
+}
+.person__gear .person__helmet {
+  fill: var(--figure);
+  stroke: none;
+}
+
+.person__bat {
+  stroke: var(--figure);
+  stroke-width: 0.11;
+  stroke-opacity: 0.9;
+  stroke-linecap: round;
+  fill: none;
+}
+
+/* ── 叠加的箭头、跑者、球 ─────────────────────── */
+
+.field-arrow {
+  stroke-width: 0.5;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.field-arrow--forced {
+  stroke: var(--lamp-out);
+}
+
+.field-arrow--free {
+  stroke: var(--lamp-ball);
+}
+
+.field-arrow--throw {
+  stroke: var(--tower-gold);
+}
+
+/* 被打出去的球留下的拖痕：一道照明金，没有箭头 */
+.field-arrow--streak {
+  stroke: var(--tower-gold);
+  stroke-width: 0.9;
+  stroke-opacity: 0.5;
+}
+
+.field-arrow--muted {
+  stroke: var(--ink-faint);
+  stroke-opacity: 0.55;
+}
+
+/* 跑者的盘子留一圈石灰白的边，野手的盘子是暗边 ——
+   两种盘子叠在同一块场地上，必须一眼分得开谁是谁。 */
+.field-runner circle {
+  stroke: var(--figure);
+  stroke-width: 0.26;
+  filter: drop-shadow(0 0.3px 0.4px rgba(0, 0, 0, 0.6));
+  transition: fill var(--dur) var(--ease), stroke var(--dur) var(--ease);
+}
+
+.field-runner text {
+  font-family: var(--font-dot);
+  font-size: 2.2px;
+  fill: var(--ink);
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.field-runner--forced circle {
+  fill: var(--lamp-out);
+  stroke: var(--lamp-out);
+  filter: drop-shadow(0 0 2px var(--lamp-out));
+}
+
+.field-runner--forced text {
+  fill: var(--lamp-out-ink);
+}
+
+.field-runner--safe circle {
+  fill: var(--lamp-ball);
+  stroke: var(--lamp-ball);
+}
+
+.field-runner--safe text {
+  fill: var(--lamp-ball-ink);
+}
+
+.field-runner--out circle {
+  fill: var(--ink-faint);
+  stroke: var(--ink-faint);
+  fill-opacity: 0.5;
+}
+
+/* 球：白球 + 那条横 8 字缝线。同一个形状也用在别处当标记。 */
+.field-ball__body {
+  stroke: rgba(0, 0, 0, 0.25);
+  stroke-width: 0.08;
+}
+
+.field-ball__seam {
+  fill: none;
+  stroke: var(--seam-red);
+  stroke-width: 0.075;
+  stroke-linecap: round;
+}
+
+.field-ball__stitches {
+  fill: none;
+  stroke: var(--seam-red);
+  stroke-width: 0.075;
+  stroke-linecap: round;
+}
+
+/* Static architectural layers are rasterised once; light comes from gradients. */
+.field__stadium {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1000ms var(--ease);
+}
+.field__stadium.is-on { opacity: 1; }
+.stadium__terraces path {
+  fill: none;
+  stroke: var(--stadium-tier);
+  stroke-width: 2.2;
+}
+.stadium__seats rect { fill: var(--stadium-seat); opacity: 0.65; }
+.stadium__seats .is-spark { fill: var(--stadium-spark); opacity: 0.75; }
+.stadium__concourse rect { fill: var(--stadium-tier); stroke: var(--stadium-seat); stroke-width: 0.16; }
+.stadium__concourse path { stroke: var(--stadium-seat); stroke-width: 0.5; opacity: 0.45; }
+.stadium__beams { mix-blend-mode: screen; }
+:root[data-theme='day'] .stadium__beams { display: none; }
+.tower__flare { fill: none; stroke: #f4faff; stroke-width: 0.065; stroke-opacity: 0.45; }
+
+.field-token { transition: transform 520ms var(--ease); }
+.field-runner .field-runner__halo {
+  fill: var(--tower-gold);
+  fill-opacity: 0.08;
+  stroke: var(--tower-gold);
+  stroke-width: 0.09;
+  stroke-opacity: 0.32;
+  filter: none;
+}
+.field-runner--forced .field-runner__halo { fill: var(--lamp-out); stroke: var(--lamp-out); }
+.field-runner--safe .field-runner__halo { fill: var(--lamp-ball); stroke: var(--lamp-ball); }
+.field-runner--out .field-runner__halo { opacity: 0; }
+.field-runner__disc { animation: token-arrive 420ms var(--ease) both; }
+@keyframes token-arrive {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.field-arrow:not([stroke-dasharray]) {
+  stroke-dasharray: 1;
+  animation: arrow-arrive 620ms var(--ease) both;
+}
+@keyframes arrow-arrive {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+.fielder__disc { transition: fill 180ms var(--ease), stroke 180ms var(--ease), stroke-width 180ms var(--ease); }
+.fielder:hover .fielder__disc,
+.fielder:focus-visible .fielder__disc { stroke: var(--tower-gold); stroke-width: 0.4; }
+.fielder__tip { animation: token-arrive 160ms var(--ease) both; }
+
+.hero__ball-layer { pointer-events: none; }
+.hero__ball-trail { fill: none; stroke-width: 0.14; stroke-linecap: round; }
+.field-ball__spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ball-spin 650ms linear infinite;
+}
+@keyframes ball-spin { to { transform: rotate(360deg); } }
+.hero[data-active='false'] .field-ball__spin { animation-play-state: paused; }
+.hero__contact {
+  opacity: 0;
+  fill: none;
+  stroke: #fff1bc;
+  stroke-width: 0.04;
+  transform-origin: 0 0;
+}
+.hero[data-phase='hit'] .hero__contact { animation: contact-burst 650ms var(--ease) both; }
+.hero[data-phase='hit'] .person--batter .person__bat,
+.hero[data-phase='missed'] .person--batter .person__bat {
+  transform-box: fill-box;
+  transform-origin: right bottom;
+  animation: bat-swing 330ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+@keyframes contact-burst {
+  0% { opacity: 0.95; transform: scale(0.25); }
+  100% { opacity: 0; transform: scale(2.5); }
+}
+@keyframes bat-swing {
+  0% { transform: rotate(0deg); }
+  55% { transform: rotate(105deg); }
+  100% { transform: rotate(85deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__contact { display: none; }
+  .field__score-light { display: none; }
+  .field-ball__spin { animation: none; }
+}
+
+.field-note {
+  font-size: 2.3px;
+  fill: var(--ink-muted);
+  text-anchor: middle;
+  font-family: var(--font-body);
+}

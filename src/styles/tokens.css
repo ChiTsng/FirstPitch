@@ -1,0 +1,236 @@
+/*
+ * 设计 token。改配色只改这个文件。
+ *
+ * 概念：夜场灯光下，球场一层层亮起来。
+ * 深蓝的夜空、照明塔的光晕、修剪出条纹的草坪、石灰画的白线、甲子园式的黑土内野、
+ * 日本球场的 B/S/O 灯板。
+ *
+ * 另有一套「日场」浅色主题，跟随 prefers-color-scheme，也可以手动切换
+ * （html 上的 data-theme="night" / "day"，见 src/hooks/useTheme.ts）。
+ */
+
+:root {
+  /* ── 夜场（默认） ───────────────────────────────── */
+  --night-blue: #0e2233;
+  --turf-green: #2f6b3a;
+  --turf-stripe: #377a43;
+  --lime-white: #f2f3ee;
+  --seam-red: #c8102e;
+  --tower-gold: #e9c46a;
+
+  /* 记分板灯（只在记分板和相关图例里用） */
+  --lamp-ball: #4cd97b;
+  --lamp-strike: #ffc43d;
+  --lamp-out: #ff4a3d;
+  /* 灯色上的小字。夜场的灯很亮，配深字；日场的灯压暗了，配白字。 */
+  --lamp-ball-ink: #06331a;
+  --lamp-out-ink: #2b0400;
+
+  /* ── 语义层。组件只用这些，不直接用上面的原始色 ── */
+  --bg: var(--night-blue);
+  --bg-raised: #14304a;
+  --bg-sunken: #0a1a28;
+  --surface: #17283a;
+
+  --ink: var(--lime-white);
+  --ink-muted: #a8bccd;
+  --ink-faint: #7793a9;
+
+  --line: rgba(242, 243, 238, 0.14);
+  --line-strong: rgba(242, 243, 238, 0.3);
+  --chalk: #f2f3ee;
+
+  /* ── 颜色的语义 ───────────────────────────────
+     颜色是含义，不是装饰。四种颜色各管一件事：
+       照明金  光      球场的光、当前位置、解锁下一层、得分的一闪
+       缝线红  漏洞    漏洞标记、出局灯、被迫的跑者、警示
+       石灰白  结构    界线、规则块的发丝线、分隔
+       草坪绿  安全    场地、安全的跑者、坏球灯
+     金色一旦出现在每一个左边框上，它就不再表示任何东西。 */
+
+  /* 石灰发丝线：结构性的边，替掉原来到处都是的金色竖线 */
+  --hairline: rgba(242, 243, 238, 0.28);
+  --hairline-soft: rgba(242, 243, 238, 0.12);
+
+  /* 器械：记分板、计时器、工具面板。深青色金属与球场氛围统一。 */
+  --instrument: #0c2027;
+  --instrument-raised: #17353c;
+  --instrument-line: rgba(242, 243, 238, 0.17);
+  --instrument-ink: #edf3e8;
+  --instrument-ink-muted: #b4c9c7;
+  --instrument-ink-faint: #97aeae;
+
+  /* 控件的材质。按键是**有厚度**的：上沿一道高光、下沿一道暗边，按下去真的陷进去；
+     凹槽（下拉框、滑轨、复选框）反过来，内壁有阴影。
+     .panel 里会整体换成器械那一套，见 controls.css。 */
+  --key-top: #1e3145;
+  --key-bottom: #16273a;
+  --key-edge: rgba(242, 243, 238, 0.2);
+  --key-gloss: rgba(255, 255, 255, 0.1);
+  --key-drop: rgba(0, 0, 0, 0.5);
+  --key-well: #0d1b28;
+  /* 按键亮起时压在照明金上的字 */
+  --key-lit-ink: #241a04;
+
+  /* 页面的空气（见 base.css 的 body::before / ::after） */
+  --air-top: rgba(0, 0, 0, 0.4);
+  --air-edge: rgba(0, 0, 0, 0.32);
+  --air-spill: rgba(233, 196, 106, 0.055);
+  --air-noise: 0.05;
+
+  --accent: var(--seam-red);
+  --accent-ink: #ffffff;
+  /* 缝线红当文字用时要提亮：#C8102E 在夜场蓝上只有 2.76:1。
+     色块、描边仍用 --accent，文字用这个。 */
+  --accent-text: #ee6274;
+  --highlight: var(--tower-gold);
+  --highlight-soft: rgba(233, 196, 106, 0.16);
+
+  /* 球场材质。草和土各给三档明度，让渐变做出受光差别 ——
+     一整块平涂的十六进制色正是「像示意图」的元凶。 */
+  --field-grass: #24654a;
+  --field-grass-lit: #418963;
+  --field-grass-deep: #0c342e;
+  --field-grass-alt: var(--turf-stripe);
+  /* 甲子园式黑土内野。真实的土比这更暗，屏幕上提亮一点才分得出草和土。 */
+  --field-dirt: #463125;
+  --field-dirt-lit: #806044;
+  --field-wall: #174e50;
+  --field-floor: #12252a;
+  --field-track: #594032;
+  --stadium-seat: #46757a;
+  --stadium-tier: #182e36;
+  --stadium-spark: #f5dca0;
+  /* 场上人物与编号盘的颜色。夜场是被灯打亮的白，
+     日场反过来：白天人是**深色**的剪影，白衣服在晒白的地面上根本看不见。 */
+  --figure: var(--lime-white);
+  /* 场上圆盘的搪瓷面 */
+  --disc-top: #27445f;
+  --disc-bottom: #0e2131;
+  /* 夜空：球场正上方被灯打亮一层，往外沉回夜色 */
+  --field-sky: #142e3a;
+  --field-sky-deep: #071723;
+
+  --focus-ring: var(--tower-gold);
+  --glow: 0 0 36px rgba(233, 196, 106, 0.28);
+
+  /* ── 字体 ────────────────────────────────────── */
+  --font-display: 'Noto Serif SC', 'Noto Serif JP', Georgia, 'Songti SC', serif;
+  --font-body: 'Noto Sans SC', 'Noto Sans JP', -apple-system, 'Segoe UI', system-ui,
+    sans-serif;
+  --font-jp-body: 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+  /* 点阵字只用在「仪器」上：记分板、计时器、眉标、表格里的数值。
+     不混进中文正文 —— 像素字在 17px 下会很吵。 */
+  --font-dot: 'DotGothic16', 'Noto Sans JP', monospace;
+
+  /* ── 字号 ─────────────────────────────────────
+     「巨大的明朝体 + 微小的点阵字」的对比就是这个站的识别度。
+     上一版最大标题 3.9rem、正文 1rem，跨度太小，全站没有节奏。 */
+  --fs-display: clamp(2.9rem, 7vw, 5rem);
+  --fs-h2: clamp(1.75rem, 3.4vw, 2.5rem);
+  --fs-h3: clamp(1.15rem, 2vw, 1.42rem);
+  /* 漏洞陈述：比正文大一圈的明朝体，是每一节真正的开头 */
+  --fs-claim: clamp(1.3rem, 2.1vw, 1.7rem);
+  --fs-body: 1.0625rem;
+  --fs-small: 0.94rem;
+  --fs-eyebrow: 0.78rem;
+
+  /* ── 间距与尺寸 ───────────────────────────────── */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4.5rem;
+  --sp-9: 7rem;
+
+  --radius: 4px;
+  --radius-lg: 10px;
+
+  /* 正文行宽不超过约 34 个汉字 */
+  --measure: 34em;
+
+  --dur-fast: 140ms;
+  --dur: 280ms;
+  --dur-slow: 620ms;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ── 日场（浅色） ────────────────────────────────── */
+:root[data-theme='day'] {
+  --bg: #eaf1f6;
+  --bg-raised: #ffffff;
+  --bg-sunken: #dae6ee;
+  --surface: #ffffff;
+
+  --ink: #14242f;
+  --ink-muted: #46606f;
+  --ink-faint: #556c7d;
+
+  --line: rgba(20, 36, 47, 0.14);
+  --line-strong: rgba(20, 36, 47, 0.32);
+  --chalk: #ffffff;
+
+  --hairline: rgba(20, 36, 47, 0.3);
+  --hairline-soft: rgba(20, 36, 47, 0.12);
+
+  /* 日场的器械仍然是深色的：仪表盘在太阳底下也是深色的 */
+  --instrument: #153038;
+  --instrument-raised: #203f45;
+  --instrument-line: rgba(255, 255, 255, 0.18);
+  --instrument-ink: #f0f3e8;
+  --instrument-ink-muted: #c0d2ca;
+  --instrument-ink-faint: #abc2b6;
+
+  --key-top: #ffffff;
+  --key-bottom: #e4ebf0;
+  --key-edge: rgba(20, 36, 47, 0.24);
+  --key-gloss: rgba(255, 255, 255, 0.9);
+  --key-drop: rgba(20, 36, 47, 0.2);
+  --key-well: #d5dee4;
+  --key-lit-ink: #241a04;
+
+  --air-top: rgba(255, 255, 255, 0.5);
+  --air-edge: rgba(20, 36, 47, 0.07);
+  --air-spill: rgba(255, 213, 138, 0.13);
+  --air-noise: 0.035;
+
+  --accent: #a80d26;
+  --accent-ink: #ffffff;
+  /* 浅色底上缝线红本身就够读，不用变体 */
+  --accent-text: #a80d26;
+  --highlight: #85600f;
+  --highlight-soft: rgba(133, 96, 15, 0.13);
+
+  /* 日场是甲子园的下午：硬光、偏暖、对比更高。
+     草被晒得发黄，土是被太阳烤白的黏土，不是夜里那种黑。 */
+  --field-grass: #55a058;
+  --field-grass-lit: #74bd73;
+  --field-grass-deep: #3e8044;
+  --field-grass-alt: #63ad63;
+  --field-dirt: #c09466;
+  --field-dirt-lit: #dcb583;
+  --field-wall: #93a59d;
+  /* 俯视图里场地之外是看台和水泥地，不是天 —— 用蓝会读成球场泡在水里 */
+  --field-floor: #b3ad99;
+  --field-track: #a87752;
+  --stadium-seat: #4e7d74;
+  --stadium-tier: #9d9e86;
+  --stadium-spark: #f9eed4;
+  --field-sky: #bdb59e;
+  --field-sky-deep: #a69e87;
+  --figure: #2b271c;
+  --disc-top: #ffffff;
+  --disc-bottom: #ccd8e0;
+
+  --lamp-ball: #107a35;
+  --lamp-strike: #9a6c12;
+  --lamp-out: #c01f13;
+  --lamp-ball-ink: #ffffff;
+  --lamp-out-ink: #ffffff;
+
+  --focus-ring: #85600f;
+  --glow: 0 0 30px rgba(133, 96, 15, 0.22);
+}

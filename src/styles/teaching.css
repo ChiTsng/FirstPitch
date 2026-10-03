@@ -1,0 +1,64 @@
+/* Purpose-built teaching scenes: show relationships and a readable strike-zone volume. */
+.origin-scene, .zone-scene { --figure: #e0ecda; --ink: #e8eedb; --ink-muted: #afc6bb; --ink-faint: #a2bfb3; }
+.scene-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 15px 16px 0; }
+.scene-steps button { min-width: 0; padding: 10px 5px; border: 1px solid #9fc7b52b; border-radius: 5px; background: #abc8aa08; color: #bbd0c4; cursor: pointer; font-size: .8rem; transition: background .25s, border-color .25s, color .25s; }
+.scene-steps button b { font-size: .67rem; margin-right: 7px; color: #91b29d; }
+.scene-steps button[aria-pressed='true'] { color: #ffedbd; background: #d9c18415; border-color: #ddc18c86; box-shadow: inset 0 -2px 0 #d4b774; }
+.scene-steps button:hover { background: #b9d6bd18; }
+.origin-scene__drawing, .zone-scene__drawing { display: block; width: 100%; background: radial-gradient(ellipse at 50% 65%, #24423950, transparent 75%); }
+.origin-scene__path { stroke: #e6c98b; stroke-width: 1.5; stroke-dasharray: 4 7; fill: none; opacity: .5; }
+.origin-scene__hit { stroke: #e6c98b; stroke-width: 2; fill: none; opacity: .8; }
+.origin-scene__flight-label { fill: #e9cc91; font: 13px var(--font-body); text-anchor: middle; }
+.origin-scene__labels { font: 17px var(--font-body); fill: #c6d9ca; text-anchor: middle; }
+.origin-scene__attack { fill: #f0cf8c; }
+.origin-scene__batter { --figure: #e8c88b; }
+.origin-scene__view { fill: #94b4a7; font: 12px var(--font-body); text-anchor: middle; }
+.origin-scene .person__bat, .zone-scene .person__bat { stroke: #e9c47d; }
+.zone-scene__drawing { padding-top: 10px; }
+.zone-scene__labels { fill: #d0e1d3; font: 17px var(--font-body); }
+.zone-scene__labels .zone-scene__gold { fill: #f0d59a; }
+.zone-scene__labels .zone-scene__muted { fill: #9bbcae; font-size: 12px; }
+.zone-choices { padding-top: 0; padding-bottom: 16px; }
+.zone-verdict { display: grid; place-items: center; flex: 0 0 34px; height: 34px; border: 1px solid #8ee4b155; border-radius: 50%; color: #b0e3bd; background: #5baf6c12; font-family: var(--font-dot); }
+.zone-verdict.is-strike { border-color: #e3c18166; color: #f2d596; background: #e3c18110; }
+.zone-scene__footnote { font-size: .69rem; line-height: 1.8; padding: 0 23px 18px; margin: 10px 0 0; color: #a8c2b4; }
+.zone-scene__footnote a { color: #e0cb94; }
+.story-sources { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; border-top: 1px solid var(--hairline-soft); padding-top: 14px; margin-top: 22px; font-size: .75rem; color: var(--ink-faint); }
+.story-sources a { color: var(--ink-muted); }
+.story-sources a:hover { color: var(--highlight); }
+.story__lesson { font-size: .84rem; padding-left: 16px; border-left: 2px solid var(--highlight); margin-top: 24px; }
+.story-jumps { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 25px; border-bottom: 1px solid var(--hairline-soft); margin-bottom: 30px; }
+.story-jumps a { text-decoration: none; font-size: .78rem; color: var(--ink-muted); padding: 5px 11px; border: 1px solid var(--hairline-soft); border-radius: 4px; }
+.story-jumps a:hover { color: var(--ink); background: var(--highlight-soft); }
+.story { scroll-margin-top: 90px; }
+@media(min-width: 761px) and (max-height: 850px) {
+  .origin-scene__drawing { max-height: 250px; }
+  .zone-scene__drawing { max-height: 300px; }
+}
+@media(max-width: 640px) {
+  .scene-steps { padding: 12px 10px 0; }
+  .scene-steps button { font-size: .72rem; }
+  .scene-steps button b { margin-right: 4px; }
+  .origin-scene figcaption, .zone-scene figcaption { padding-inline: 16px; }
+  .zone-choices { padding-bottom: 13px; }
+  .zone-scene__footnote { padding-inline: 16px; }
+}
+
+/* 第 00 章观察室里新出现的人：淡入并从右侧滑入半个身位，只在出现的那一刻播放一次。
+   时长和 OriginScene 的 ENTRANCE_MS 一致：人站稳了，球才飞过去。
+   减少动态效果时由 base.css 的全局规则压成瞬时完成。 */
+.origin-scene__enter { animation: origin-enter .38s ease-out both; }
+.origin-scene__enter--fade { animation-name: origin-fade; animation-duration: .32s; }
+
+/* 会动的人偶（puppet/Puppet.tsx）：头在一个跟着转的小组里，不是 .person 的直接子元素，
+   所以单独给颜色；头盔和面罩跟头一起转 */
+.puppet__head, .puppet__helmet { fill: var(--figure); stroke: var(--figure); stroke-width: .022; }
+.puppet__mask { fill: none; stroke: #0d2a2f; stroke-width: .028; stroke-linecap: round; opacity: .75; }
+
+/* 球被碰到的那一下（接住、击中、落地）：一圈向外散开的光 */
+.origin-scene__pop circle { fill: none; stroke: #f5d796; stroke-width: 2; }
+@keyframes origin-enter { from { opacity: 0; transform: translateX(15px); } }
+@keyframes origin-fade { from { opacity: 0; } }
+
+/* 第 01 章观察室（好球带）的球：换选项时滑到新位置 */
+.zone-scene__ball { transition: transform .65s cubic-bezier(.2, .7, .2, 1); }
