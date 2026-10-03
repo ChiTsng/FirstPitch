@@ -34,7 +34,7 @@ node tools/probe.mjs http://127.0.0.1:5175/#/ \
   'JSON.stringify(document.querySelector(".field").getBoundingClientRect())'
 
 node tools/motion-check.mjs                  # 球、镜头、离屏暂停、减少动态效果的回归检查
-node tools/hit-check.mjs                     # 标题击球：棒球接触、碰撞停顿、速度、键盘与单击重打
+node tools/hit-check.mjs                     # 标题击球：接触、速度、六种视口的图片落点、取景变化与重打
 ```
 
 `--to` 传的是 **CSS 选择器**，不是 URL 锚点 —— 本站用 hash 路由，锚点位置被路由占了。

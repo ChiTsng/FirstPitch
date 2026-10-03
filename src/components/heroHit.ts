@@ -5,16 +5,28 @@ export const FLIGHT = 1250;
 export const HIT_DURATION = CONTACT + HIT_STOP + FLIGHT;
 
 export const HITS = [
-  { name: '一记平射', note: '咔！球窜进了中外野。', x: .88, y: .63, lift: .14 },
-  { name: '高飞长打', note: '这一棒，飞向看台的灯光。', x: .76, y: .35, lift: .25 },
-  { name: '直奔深处', note: '漂亮！沿着右侧一路飞远。', x: .96, y: .53, lift: .10 },
+  { name: '一记平射', note: '咔！球窜进了中外野。', x: .708, y: .555, lift: .14 },
+  { name: '高飞长打', note: '这一棒，飞进灯光下的看台。', x: .775, y: .455, lift: .25 },
+  { name: '直奔深处', note: '漂亮！飞向右中外野的草地。', x: .805, y: .57, lift: .10 },
 ] as const;
 
 type Point = { x: number; y: number };
-export function hitFlight(start: Point, origin: Point, width: number, height: number, shot: number, rotation: number) {
+/** Anchors are on the 1672 × 941 stadium artwork, NOT on the animation container.
+ * The painted element's rect includes its scale/parallax; cover crops from each edge
+ * according to background-position. Return a viewport point to bridge both layers.
+ */
+export function stadiumPoint(anchor: Point, box: { left: number; top: number; width: number; height: number }, position: Point) {
+  const scale = Math.max(box.width / 1672, box.height / 941);
+  const width = 1672 * scale, height = 941 * scale;
+  return {
+    x: box.left + (box.width - width) * position.x + anchor.x * width,
+    y: box.top + (box.height - height) * position.y + anchor.y * height,
+  };
+}
+
+export function hitFlight(start: Point, origin: Point, end: Point, height: number, shot: number, rotation: number) {
   const hit = HITS[shot % HITS.length];
-  const end = { x: width * hit.x, y: height * hit.y };
-  const control = { x: start.x + width * .28, y: start.y - height * hit.lift };
+  const control = { x: start.x + (end.x - start.x) * .55, y: start.y + (end.y - start.y) * .55 - height * hit.lift };
   const launch = CONTACT + HIT_STOP;
   const pose = (x: number, y: number, size: number, stretch: number, spin: number) =>
     `translate3d(${x - origin.x}px, ${y - origin.y}px, 0) rotate(-25deg) scale(${size * stretch}, ${size / stretch}) rotate(${spin + 25}deg)`;

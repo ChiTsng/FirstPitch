@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { usePrefersReducedMotion } from '../hooks/useLocalStorage';
 import { HeroBall } from './SceneArt';
 import { HitBat } from './HitBat';
-import { CONTACT, HIT_STOP, HIT_DURATION, HITS, hitFlight } from './heroHit';
+import { CONTACT, HIT_STOP, HIT_DURATION, HITS, hitFlight, stadiumPoint } from './heroHit';
+
+function releaseScene(el: HTMLElement | null) {
+  el?.querySelectorAll<HTMLElement>('.opening__image, .opening__playfield').forEach(layer => {
+    layer.style.removeProperty('transform');
+    layer.style.removeProperty('transition');
+  });
+}
 
 /** Cinematic opening. Per-frame motion stays on composited layers, outside React. */
 export function HeroPrototype() {
@@ -45,8 +52,24 @@ export function HeroPrototype() {
   }, [reduced]);
   useEffect(() => () => { animations.current.forEach(a => a.cancel()); }, []);
   useEffect(() => {
+    const el = root.current;
+    if (!el) return;
+    let width = el.clientWidth, height = el.clientHeight;
+    const observer = new ResizeObserver(() => {
+      if (width === el.clientWidth && height === el.clientHeight) return;
+      width = el.clientWidth; height = el.clientHeight;
+      animations.current.forEach(a => a.cancel());
+      busy.current = false;
+      releaseScene(el);
+      setPhase('ready');
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  useEffect(() => {
     if (reduced) {
       animations.current.forEach(a => a.cancel());
+      releaseScene(root.current);
       busy.current = false;
       setPhase(previous => previous === 'flight' ? 'landed' : previous);
     }
@@ -63,19 +86,35 @@ export function HeroPrototype() {
     if (busy.current) return;
     animations.current.forEach(a => a.cancel());
     animations.current = [];
+    releaseScene(root.current);
     const nextShot = take.current++ % HITS.length;
     setShot(nextShot);
     if (reduced) { setPhase('landed'); return; }
     const ball = root.current?.querySelector<HTMLButtonElement>('.opening__ball');
     const stage = root.current?.querySelector<HTMLDivElement>('.opening__playfield');
     const trail = root.current?.querySelector<SVGSVGElement>('.opening__trajectory');
-    if (ball && stage && trail) {
+    const stadium = root.current?.querySelector<HTMLDivElement>('.opening__image');
+    if (ball && stage && trail && stadium) {
       busy.current = true;
+      // Freeze the current camera, including any in-progress parallax transition.
+      // Pointer/scroll updates must not move the scenery away from the flight target.
+      for (const layer of [stadium, stage]) {
+        const transform = getComputedStyle(layer).transform;
+        layer.style.transition = 'none';
+        layer.style.transform = transform;
+      }
       const matrix = new DOMMatrixReadOnly(phase === 'ready' ? getComputedStyle(ball).transform : undefined);
       const w = stage.clientWidth, h = stage.clientHeight;
       const origin = { x: ball.offsetLeft + ball.offsetWidth / 2, y: ball.offsetTop + ball.offsetHeight / 2 };
       const start = { x: origin.x + matrix.m41, y: origin.y + matrix.m42 };
-      const plan = hitFlight(start, origin, w, h, nextShot, Math.atan2(matrix.b, matrix.a) * 180 / Math.PI);
+      const background = getComputedStyle(stadium);
+      const target = stadiumPoint(HITS[nextShot], stadium.getBoundingClientRect(), {
+        x: parseFloat(background.backgroundPositionX) / 100,
+        y: parseFloat(background.backgroundPositionY) / 100,
+      });
+      const stageRect = stage.getBoundingClientRect();
+      const end = { x: target.x - stageRect.left, y: target.y - stageRect.top };
+      const plan = hitFlight(start, origin, end, h, nextShot, Math.atan2(matrix.b, matrix.a) * 180 / Math.PI);
       trail.setAttribute('viewBox', `0 0 ${w} ${h}`);
       const path = trail.querySelector('path')!;
       path.setAttribute('d', plan.path);
@@ -111,14 +150,15 @@ export function HeroPrototype() {
         { offset: .3, transform: 'translate(-50%, -50%) scale(.95)', opacity: .8 },
         { transform: 'translate(-50%, -50%) scale(1.4)', opacity: 0 },
       ], 240, CONTACT);
-      animate(root.current!.querySelector('.opening__image')!, [
+      animate(stadium, [
         { translate: '0 0' }, { translate: '-6px 3px' }, { translate: '4px -2px' }, { translate: '-2px 1px' }, { translate: '0 0' },
       ], 190, CONTACT);
-      animate(landing, [
+      const landingEffect = animate(landing, [
         { transform: 'translate(-50%, -50%) scale(.1)', opacity: 0 },
         { offset: .22, transform: 'translate(-50%, -50%) scale(.8)', opacity: .9 },
         { transform: 'translate(-50%, -50%) scale(2)', opacity: 0 },
       ], 650, HIT_DURATION - 180);
+      landingEffect.onfinish = () => releaseScene(root.current);
       clock.onfinish = () => { busy.current = false; setPhase('landed'); };
       setPhase('flight');
     }

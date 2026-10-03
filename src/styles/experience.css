@@ -221,7 +221,6 @@
 }
 @media(max-width: 640px) {
   .opening { height: calc(100svh - 62px); min-height: 760px; max-height: 1000px; }
-  .opening__image { background-position: 67% 65%; }
   .opening::before { background: linear-gradient(0deg, #041524 0%, #04152400 30%, #04152499 76%, #04152466), linear-gradient(90deg, #04152477, transparent); }
   .opening__copy { width: 100%; padding: 44px 26px 0; }
   .opening__eyebrow { margin-bottom: 19px; }
@@ -283,6 +282,12 @@
   .page-banner__copy > .eyebrow { font-size: .59rem; }
   .page-banner .page__lede { font-size: 1rem; }
 }
+/* Keep the three artwork landmarks in frame on portrait and tablet layouts. */
+@media(max-width: 900px), (max-aspect-ratio: 1/1) {
+  .opening__image { top: 18%; background-position: 82% 65%; mask-image: linear-gradient(transparent, #000 18%); }
+}
+/* Wrapped controls need more room before the distant stands begin. */
+@media(max-width: 360px) { .opening { min-height: 860px; } }
 @media(prefers-reduced-motion: reduce) {
   .opening__image, .opening__playfield { transform: none; will-change: auto; }
   .opening__ball, .opening__atmosphere i, .opening__bottom b { animation: none; }
