@@ -633,6 +633,16 @@
   opacity: 0.3;
 }
 
+.map__item.is-hidden {
+  display: none;
+}
+
+@media (max-width: 820px) {
+  .map__item.is-hidden-narrow {
+    display: none;
+  }
+}
+
 .map__item.is-lit {
   color: var(--highlight);
   border-bottom-color: var(--highlight);
